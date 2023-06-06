@@ -81,7 +81,7 @@ func merge(a, b []int) []int {
 func main() {
 	start := time.Now()
 	fmt.Println("Init records ...")
-	records := 500_000_000
+	records := 100_000_000
 	lista := genRdSlice(records)
 	listb := make([]int, len(lista))
 	copy(listb, lista)
