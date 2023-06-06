@@ -90,20 +90,20 @@ func main() {
 	fmt.Printf("Init time: %fs\n", time.Since(start).Seconds())
 	// fmt.Println(oriList)
 	start = time.Now()
-	fmt.Println("Running STD Merge Sort...")
+	fmt.Println("\nRunning STD Merge Sort ...")
 	sort.Ints(lista)
 	stamp1 := time.Since(start).Seconds()
 	fmt.Printf("STD Merge Sort: %fs\n", stamp1)
 	// fmt.Println(list1)
 	start = time.Now()
-	fmt.Printf("Running Concurrent Multiway Merge Sort; Threads use: %d/%d ...\n", previousPowerOfTwo(runtime.NumCPU()), runtime.NumCPU())
+	fmt.Printf("\nRunning Concurrent Multiway Merge Sort; Threads use: %d/%d ...\n", previousPowerOfTwo(runtime.NumCPU()), runtime.NumCPU())
 	concurrent_sort(listb)
 	stamp2 := time.Since(start).Seconds()
-	fmt.Printf("Concurrent Merge Sort: %fs\n", stamp2)
+	fmt.Printf("Concurrent Mulitway Merge Sort: %fs\n", stamp2)
 	if stamp1 < stamp2 {
-		fmt.Printf("Slower: %.1fx times\n", stamp2/stamp1)
+		fmt.Printf("\nSlower: %.1fx times\n", stamp2/stamp1)
 	} else {
-		fmt.Printf("Faster: %.1fx times\n", stamp1/stamp2)
+		fmt.Printf("\nFaster: %.1fx times\n", stamp1/stamp2)
 	}
 	// fmt.Println(list2)
 }

@@ -2,6 +2,9 @@
 
 ## Concurrent Multiway Merge Sort
 
+- Demonstration clip: <https://youtu.be/uFjDycXaLWE>
+- Citation: <https://en.wikipedia.org/wiki/Merge_sort#Parallel_multiway_merge_sort>
+
 ```bash
 Init records ...
 Number of records: 500,000,000; Init time: 8.516280s
