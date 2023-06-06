@@ -15,34 +15,34 @@ func merge(arr []int, low, mid, high int) {
 	)
 	n1 = mid - low + 1
 	n2 = high - mid
-	L := make([]int, n1)
-	R := make([]int, n2)
+	l := make([]int, n1)
+	r := make([]int, n2)
 	for i := 0; i < n1; i++ {
-		L[i] = arr[low+i]
+		l[i] = arr[low+i]
 	}
 	for j := 0; j < n2; j++ {
-		R[j] = arr[mid+1+j]
+		r[j] = arr[mid+1+j]
 	}
 	i = 0
 	j = 0
 	k = low
 	for i < n1 && j < n2 {
-		if L[i] <= R[j] {
-			arr[k] = L[i]
+		if l[i] <= r[j] {
+			arr[k] = l[i]
 			i++
 		} else {
-			arr[k] = R[j]
+			arr[k] = r[j]
 			j++
 		}
 		k++
 	}
 	for i < n1 {
-		arr[k] = L[i]
+		arr[k] = l[i]
 		i++
 		k++
 	}
 	for j < n2 {
-		arr[k] = R[j]
+		arr[k] = r[j]
 		j++
 		k++
 	}
@@ -50,21 +50,21 @@ func merge(arr []int, low, mid, high int) {
 
 func parasort(arr []int, low, high int) {
 	var wg sync.WaitGroup
-	var lock sync.Mutex
+	var mut sync.Mutex
 	if low < high {
 		mid := (low + high) / 2
 		wg.Add(2)
 		go func() {
 			defer wg.Done()
-			lock.Lock()
+			mut.Lock()
 			parasort(arr, low, mid)
-			lock.Unlock()
+			mut.Unlock()
 		}()
 		go func() {
 			defer wg.Done()
-			lock.Lock()
+			mut.Lock()
 			parasort(arr, mid+1, high)
-			lock.Unlock()
+			mut.Unlock()
 		}()
 		wg.Wait()
 		merge(arr, low, mid, high)
@@ -73,18 +73,21 @@ func parasort(arr []int, low, high int) {
 
 func main() {
 	start := time.Now()
-	oriList := genRdSlice(100_000_000)
+	oriList := genRdSlice(100)
 	list1 := make([]int, len(oriList))
 	list2 := make([]int, len(oriList))
 	copy(list1, oriList)
 	copy(list2, oriList)
 	fmt.Printf("Init time: %fs\n", time.Since(start).Seconds())
+	fmt.Println(oriList)
 	start = time.Now()
 	parasort(list1, 0, len(list1)-1)
 	fmt.Printf("Parallel Merge Sort: %fs\n", time.Since(start).Seconds())
+	fmt.Println(list1)
 	start = time.Now()
 	sort.Ints(list2)
 	fmt.Printf("STD Merge Sort: %fs\n", time.Since(start).Seconds())
+	fmt.Println(list2)
 }
 
 func genRdSlice(n int) []int {
