@@ -3,91 +3,109 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"runtime"
 	"sort"
 	"sync"
 	"time"
+
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
-func merge(arr []int, low, mid, high int) {
-	var (
-		i, j, k int
-		n1, n2  int
-	)
-	n1 = mid - low + 1
-	n2 = high - mid
-	l := make([]int, n1)
-	r := make([]int, n2)
-	for i := 0; i < n1; i++ {
-		l[i] = arr[low+i]
-	}
-	for j := 0; j < n2; j++ {
-		r[j] = arr[mid+1+j]
-	}
-	i = 0
-	j = 0
-	k = low
-	for i < n1 && j < n2 {
-		if l[i] <= r[j] {
-			arr[k] = l[i]
-			i++
-		} else {
-			arr[k] = r[j]
-			j++
+func concurrent_sort(arr []int) []int {
+	min := func(a int, b int) int {
+		if a < b {
+			return a
 		}
-		k++
+		return b
 	}
-	for i < n1 {
-		arr[k] = l[i]
-		i++
-		k++
+	threads := previousPowerOfTwo(runtime.NumCPU())
+	parts := make([][]int, threads)
+	increment := len(arr) / threads
+	for i := 0; i < len(arr); i += increment {
+		parts[i/increment] = arr[i:min(len(arr), i+increment)]
 	}
-	for j < n2 {
-		arr[k] = r[j]
-		j++
-		k++
+	var wg sync.WaitGroup
+	for _, part := range parts {
+		wg.Add(1)
+		go func(part []int) {
+			sort.Ints(part)
+			wg.Done()
+		}(part)
 	}
+	wg.Wait()
+	var merged []int
+	for _, part := range parts {
+		merged = merge(merged, part)
+	}
+	return merged
 }
 
-func parasort(arr []int, low, high int) {
-	var wg sync.WaitGroup
-	var mut sync.Mutex
-	if low < high {
-		mid := (low + high) / 2
-		wg.Add(2)
-		go func() {
-			defer wg.Done()
-			mut.Lock()
-			parasort(arr, low, mid)
-			mut.Unlock()
-		}()
-		go func() {
-			defer wg.Done()
-			mut.Lock()
-			parasort(arr, mid+1, high)
-			mut.Unlock()
-		}()
-		wg.Wait()
-		merge(arr, low, mid, high)
+func previousPowerOfTwo(x int) int {
+	a := uint64(x)
+	if a < 3 {
+		return int(a)
 	}
+	a |= a >> 1
+	a |= a >> 2
+	a |= a >> 4
+	a |= a >> 8
+	a |= a >> 16
+	a |= a >> 32
+	return int(a - (a >> 1))
+}
+
+func merge(a, b []int) []int {
+	merged := make([]int, len(a)+len(b))
+	i, j := 0, 0
+	for i < len(a) && j < len(b) {
+		if a[i] <= b[j] {
+			merged[i+j] = a[i]
+			i++
+		} else {
+			merged[i+j] = b[j]
+			j++
+		}
+	}
+	for i < len(a) {
+		merged[i+j] = a[i]
+		i++
+	}
+	for j < len(b) {
+		merged[i+j] = b[j]
+		j++
+	}
+	return merged
 }
 
 func main() {
 	start := time.Now()
-	oriList := genRdSlice(100)
-	list1 := make([]int, len(oriList))
-	list2 := make([]int, len(oriList))
-	copy(list1, oriList)
-	copy(list2, oriList)
+	fmt.Println("Init records ...")
+	records := 500_000_000
+	lista := genRdSlice(records)
+	listb := make([]int, len(lista))
+	copy(listb, lista)
+	prt := message.NewPrinter(language.English)
+	prt.Printf("Number of records: %d; ", records)
 	fmt.Printf("Init time: %fs\n", time.Since(start).Seconds())
-	fmt.Println(oriList)
+	// fmt.Println(oriList)
 	start = time.Now()
-	parasort(list1, 0, len(list1)-1)
-	fmt.Printf("Parallel Merge Sort: %fs\n", time.Since(start).Seconds())
-	fmt.Println(list1)
+	fmt.Println("Running STD Merge Sort...")
+	sort.Ints(lista)
+	stamp1 := time.Since(start).Seconds()
+	fmt.Printf("STD Merge Sort: %fs\n", stamp1)
+	// fmt.Println(list1)
 	start = time.Now()
-	sort.Ints(list2)
-	fmt.Printf("STD Merge Sort: %fs\n", time.Since(start).Seconds())
-	fmt.Println(list2)
+	fmt.Printf("Running Concurrent Multiway Merge Sort; Threads use: %d/%d ...\n", previousPowerOfTwo(runtime.NumCPU()), runtime.NumCPU())
+	concurrent_sort(listb)
+	stamp2 := time.Since(start).Seconds()
+	fmt.Printf("Concurrent Merge Sort: %fs\n", stamp2)
+	if stamp1 < stamp2 {
+		fmt.Printf("Slower: %.1fx times\n", stamp2/stamp1)
+	} else {
+		fmt.Printf("Faster: %.1fx times\n", stamp1/stamp2)
+	}
+	// fmt.Println(list2)
 }
 
 func genRdSlice(n int) []int {
